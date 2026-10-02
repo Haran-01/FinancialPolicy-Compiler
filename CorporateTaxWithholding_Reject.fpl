@@ -1,0 +1,19 @@
+POLICY CorporateTaxWithholdingReject
+INPUT
+  taxableIncome: decimal
+  withholdingPaid: decimal
+  jurisdictionRisk: int
+OUTPUT
+  additionalWithholding: decimal
+  complianceFlag: int
+WHEN
+  taxableIncome <= 250000 AND withholdingPaid >= 50000 AND jurisdictionRisk <= 2
+THEN
+  APPROVE
+  SET additionalWithholding = 0
+  SET complianceFlag = 0
+ELSE
+  REJECT
+  SET additionalWithholding = 15000
+  SET complianceFlag = 1
+END

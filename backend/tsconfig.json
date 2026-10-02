@@ -1,0 +1,51 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "lib": ["ES2022"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "removeComments": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": false,
+    "exactOptionalPropertyTypes": false,
+    "emitDecoratorMetadata": false,
+    "experimentalDecorators": false,
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  "include": [
+    "src/server.ts",
+    "src/app.ts",
+    "src/api/index.ts",
+    "src/api/compiler/**/*.ts",
+    "src/config/**/*.ts",
+    "src/controllers/compiler.controller.ts",
+    "src/errors/**/*.ts",
+    "src/middleware/errorHandler.middleware.ts",
+    "src/middleware/httpLogger.middleware.ts",
+    "src/middleware/rateLimiter.middleware.ts",
+    "src/middleware/requestId.middleware.ts",
+    "src/middleware/validate.middleware.ts",
+    "src/services/compiler.service.ts",
+    "src/types/**/*.ts",
+    "src/utils/response.ts",
+    "src/validators/compiler.validators.ts"
+  ],
+  "exclude": ["node_modules", "dist", "tests", "**/*.test.ts", "**/*.spec.ts"]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "@finpolicy/compiler",
+  "version": "1.0.0",
+  "description": "FPL Compiler — Financial Policy Language Compiler (Phase 3 Implementation)",
+  "main": "dist/compiler/src/index.js",
+  "types": "dist/compiler/src/index.d.ts",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@finpolicy/shared": "*"
+  }
+}

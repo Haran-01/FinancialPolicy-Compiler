@@ -1,0 +1,16 @@
+POLICY LoanApprovalApprove
+INPUT
+  age: int
+  salary: decimal
+  creditScore: int
+OUTPUT
+  interestRate: decimal
+WHEN
+  age >= 21 AND salary >= 60000 AND creditScore >= 700
+THEN
+  APPROVE
+  SET interestRate = 8.5
+ELSE
+  REJECT
+  SET interestRate = 14.0
+END

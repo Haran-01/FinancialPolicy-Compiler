@@ -1,0 +1,443 @@
+// ============================================================================
+// FinPolicy Compiler (FPC) — Enterprise Policy Management System Prisma Schema
+// Database: Supabase Cloud PostgreSQL
+//
+// Defines all 10 required enterprise schema models:
+//   1. User              (Users & Role-Based Access Control)
+//   2. Policy            (Policies with favorite, pin, folder, status, category)
+//   3. PolicyVersion     (Complete version control with notes & latest pointer)
+//   4. CompilationHistory(Token count, AST size, compile time, optimization summary)
+//   5. ExecutionHistory  (Input data, decision, execution time, variables, memory, trace)
+//   6. Folder            (Hierarchical nested folders for Workspace Project Explorer)
+//   7. Tag               (Custom policy tags: Banking, HR, Government, Education, Healthcare)
+//   8. PolicyCategory    (Loan, Insurance, Payroll, Tax, Investment, Fraud Detection, Scholarship, Custom)
+//   9. AuditLog          (Immutable audit trail for Create, Edit, Delete, Compile, Execute, Publish, Archive, Restore)
+//  10. SavedSession      (Workspace state, open tabs, pinned/recent files & auth refresh sessions)
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  POLICY_MANAGER
+  AUDITOR
+  VIEWER
+}
+
+enum PolicyStatus {
+  DRAFT
+  COMPILED
+  PUBLISHED
+  ARCHIVED
+  DEPRECATED
+}
+
+enum PolicyCategoryType {
+  LOAN
+  INSURANCE
+  PAYROLL
+  TAX
+  INVESTMENT
+  FRAUD_DETECTION
+  SCHOLARSHIP
+  CUSTOM
+}
+
+enum CompilationStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+}
+
+enum ExecutionStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+  TIMEOUT
+}
+
+enum DecisionResult {
+  ALLOW
+  DENY
+  REVIEW
+}
+
+enum AuditActionType {
+  CREATE
+  EDIT
+  RENAME
+  DUPLICATE
+  DELETE
+  COMPILE
+  EXECUTE
+  PUBLISH
+  ARCHIVE
+  RESTORE
+  VERSION_CREATE
+  VERSION_RESTORE
+  IMPORT
+  EXPORT
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 1. Users
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id                 String               @id @default(cuid())
+  email              String               @unique
+  name               String
+  passwordHash       String
+  role               UserRole             @default(VIEWER)
+  isActive           Boolean              @default(true)
+  lastLoginAt        DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  policies           Policy[]
+  policyVersions     PolicyVersion[]
+  compilationHistory CompilationHistory[]
+  executionHistory   ExecutionHistory[]
+  folders            Folder[]
+  auditLogs          AuditLog[]
+  savedSessions      SavedSession[]
+  apiKeys            ApiKey[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. Workspace Folders (Hierarchical Nested Folders)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Folder {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  color       String    @default("#2563EB")
+  icon        String    @default("folder")
+  parentId    String?
+  ownerId     String
+  orderIndex  Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  parent      Folder?   @relation("NestedFolders", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Folder[]  @relation("NestedFolders")
+  owner       User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  policies    Policy[]
+
+  @@index([parentId])
+  @@index([ownerId])
+  @@map("folders")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. Policy Categories
+// ─────────────────────────────────────────────────────────────────────────────
+
+model PolicyCategory {
+  id          String             @id @default(cuid())
+  slug        String             @unique
+  name        String             @unique
+  type        PolicyCategoryType @default(CUSTOM)
+  description String?
+  color       String             @default("#3B82F6")
+  icon        String             @default("shield")
+  isSystem    Boolean            @default(false)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  policies    Policy[]
+
+  @@map("policy_categories")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. Tags
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Tag {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  slug        String      @unique
+  color       String      @default("#10B981")
+  description String?
+  createdAt   DateTime    @default(now())
+
+  policies    PolicyTag[]
+
+  @@map("tags")
+}
+
+model PolicyTag {
+  policyId   String
+  tagId      String
+  assignedAt DateTime @default(now())
+
+  policy     Policy   @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([policyId, tagId])
+  @@map("policy_tags")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. Policies
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Policy {
+  id                  String               @id @default(cuid())
+  name                String
+  description         String?              @db.Text
+  source              String               @db.Text
+  category            PolicyCategoryType   @default(LOAN)
+  categoryId          String?
+  folderId            String?
+  status              PolicyStatus         @default(DRAFT)
+  tags                String[]
+  isFavorite          Boolean              @default(false)
+  isPinned            Boolean              @default(false)
+  latestVersionNumber Int                  @default(1)
+  currentVersionId    String?
+  lastCompiledAt      DateTime?
+  lastExecutedAt      DateTime?
+  hasErrors           Boolean              @default(false)
+  hasWarnings         Boolean              @default(false)
+  ownerId             String
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  owner               User                 @relation(fields: [ownerId], references: [id])
+  folder              Folder?              @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  categoryModel       PolicyCategory?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  policyTags          PolicyTag[]
+  versions            PolicyVersion[]
+  compilationHistory  CompilationHistory[]
+  executionHistory    ExecutionHistory[]
+  compiledArtifacts   CompiledArtifact[]
+  auditLogs           AuditLog[]           @relation("PolicyAuditLogs")
+
+  @@index([name])
+  @@index([status])
+  @@index([category])
+  @@index([folderId])
+  @@index([ownerId])
+  @@index([updatedAt])
+  @@map("policies")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 6. Policy Versions
+// ─────────────────────────────────────────────────────────────────────────────
+
+model PolicyVersion {
+  id               String            @id @default(cuid())
+  policyId         String
+  versionNumber    Int
+  source           String            @db.Text
+  changelog        String            @db.Text
+  versionNotes     String?           @db.Text
+  isLatest         Boolean           @default(true)
+  authorId         String
+  compiledAt       DateTime?
+  artifactId       String?           @unique
+  tokenCount       Int?
+  astNodeCount     Int?
+  createdAt        DateTime          @default(now())
+
+  policy           Policy            @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  author           User              @relation(fields: [authorId], references: [id])
+  compiledArtifact CompiledArtifact? @relation(fields: [artifactId], references: [id])
+
+  @@unique([policyId, versionNumber])
+  @@index([policyId])
+  @@map("policy_versions")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 7. Compiled Artifacts (Cached AST, IR, TAC, Quadruples, Triples & CFG)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model CompiledArtifact {
+  id                      String             @id @default(cuid())
+  policyId                String
+  versionNumber           Int
+  compilerVersion         String             @default("1.0.0")
+  artifactJson            Json
+  astJson                 Json?
+  irJson                  Json?
+  tacJson                 Json?
+  quadruplesJson          Json?
+  triplesJson             Json?
+  cfgJson                 Json?
+  optimizationReportJson  Json?
+  compiledAt              DateTime           @default(now())
+
+  policy                  Policy             @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  policyVersion           PolicyVersion?
+  compilationHistory      CompilationHistory[]
+  executionHistory        ExecutionHistory[]
+
+  @@index([policyId])
+  @@map("compiled_artifacts")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 8. Compilation History
+// ─────────────────────────────────────────────────────────────────────────────
+
+model CompilationHistory {
+  id                      String            @id @default(cuid())
+  policyId                String?
+  versionId               String?
+  artifactId              String?
+  userId                  String
+  compilerVersion         String            @default("1.0.0")
+  status                  CompilationStatus @default(SUCCESS)
+  success                 Boolean           @default(true)
+  source                  String            @db.Text
+  optimizationLevel       Int               @default(2)
+  compilationTimeMs       Float
+  tokenCount              Int               @default(0)
+  astSize                 Int               @default(0)
+  instructionsBefore      Int               @default(0)
+  instructionsAfter       Int               @default(0)
+  errorsCount             Int               @default(0)
+  warningsCount           Int               @default(0)
+  errorsJson              Json              @default("[]")
+  warningsJson            Json              @default("[]")
+  optimizationSummaryJson Json?
+  timestamp               DateTime          @default(now())
+
+  policy                  Policy?           @relation(fields: [policyId], references: [id], onDelete: SetNull)
+  artifact                CompiledArtifact? @relation(fields: [artifactId], references: [id], onDelete: SetNull)
+  user                    User              @relation(fields: [userId], references: [id])
+
+  @@index([policyId])
+  @@index([userId])
+  @@index([timestamp])
+  @@map("compilation_history")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 9. Execution History
+// ─────────────────────────────────────────────────────────────────────────────
+
+model ExecutionHistory {
+  id                   String            @id @default(cuid())
+  policyId             String
+  artifactId           String?
+  userId               String
+  status               ExecutionStatus   @default(SUCCESS)
+  success              Boolean           @default(true)
+  inputDataJson        Json
+  decision             DecisionResult    @default(ALLOW)
+  rawDecision          String            @default("APPROVE")
+  reason               String            @db.Text
+  executionTimeMs      Float
+  instructionsExecuted Int               @default(0)
+  maxStackDepth        Int               @default(1)
+  memoryUsageBytes     Int               @default(0)
+  variablesJson        Json
+  traceJson            Json?
+  profilerJson         Json?
+  diagnosticsJson      Json              @default("[]")
+  timestamp            DateTime          @default(now())
+
+  policy               Policy            @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  artifact             CompiledArtifact? @relation(fields: [artifactId], references: [id], onDelete: SetNull)
+  user                 User              @relation(fields: [userId], references: [id])
+
+  @@index([policyId])
+  @@index([userId])
+  @@index([timestamp])
+  @@map("execution_history")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 10. Audit Logs
+// ─────────────────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id           String          @id @default(cuid())
+  userId       String
+  actorName    String
+  actorRole    UserRole
+  action       String
+  actionType   AuditActionType @default(EDIT)
+  resource     String          @default("POLICY")
+  policyId     String?
+  ipAddress    String?
+  userAgent    String?
+  metadataJson Json?
+  createdAt    DateTime        @default(now())
+
+  user         User            @relation(fields: [userId], references: [id])
+  policy       Policy?         @relation("PolicyAuditLogs", fields: [policyId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([policyId])
+  @@index([actionType])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 11. Saved Sessions (Workspace State + Auth Refresh Sessions)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model SavedSession {
+  id                String   @id @default(cuid())
+  userId            String
+  name              String   @default("Default Workspace Session")
+  refreshToken      String?  @unique
+  activePolicyId    String?
+  openPolicyIds     String[]
+  pinnedPolicyIds   String[]
+  recentPolicyIds   String[]
+  expandedFolderIds String[]
+  editorStateJson   Json?
+  userAgent         String?
+  ipAddress         String?
+  expiresAt         DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("saved_sessions")
+}
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  userId     String
+  name       String
+  keyHash    String    @unique
+  keyPrefix  String
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("api_keys")
+}

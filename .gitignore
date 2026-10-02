@@ -1,0 +1,107 @@
+# ─── Dependencies ────────────────────────────────────────────────────────────
+node_modules/
+.npm/
+.yarn/
+.pnpm-store/
+
+# ─── Build outputs ───────────────────────────────────────────────────────────
+dist/
+build/
+out/
+.next/
+.nuxt/
+.svelte-kit/
+*.tsbuildinfo
+
+# ─── TypeScript declaration maps ─────────────────────────────────────────────
+*.d.ts.map
+
+# ─── Vite ────────────────────────────────────────────────────────────────────
+.vite/
+vite.config.ts.timestamp-*
+
+# ─── Prisma ──────────────────────────────────────────────────────────────────
+# Keep schema and seed files, ignore generated client
+database/prisma/generated/
+backend/prisma/generated/
+
+# ─── Environment variables ────────────────────────────────────────────────────
+.env
+.env.local
+.env.development
+.env.development.local
+.env.production
+.env.production.local
+.env.staging
+.env.test
+.env.test.local
+# Allow example files to be committed
+!.env.example
+!**/.env.example
+
+# ─── Logs ────────────────────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Local verification screenshots
+*-verification.png
+studio-story-test.png
+
+# ─── Test coverage ───────────────────────────────────────────────────────────
+coverage/
+.nyc_output/
+*.lcov
+
+# ─── IDE / Editor ────────────────────────────────────────────────────────────
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ─── OS files ────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ─── Temporary files ─────────────────────────────────────────────────────────
+tmp/
+temp/
+.tmp/
+*.tmp
+*.temp
+*.bak
+*.orig
+
+# ─── Cache ───────────────────────────────────────────────────────────────────
+.cache/
+.eslintcache
+.stylelintcache
+.parcel-cache/
+.turbo/
+
+# ─── Docker ──────────────────────────────────────────────────────────────────
+# (keep Dockerfiles, ignore local volume mounts)
+docker-data/
+postgres-data/
+
+# ─── Misc ────────────────────────────────────────────────────────────────────
+*.tgz
+*.zip
+.vercel
+.netlify

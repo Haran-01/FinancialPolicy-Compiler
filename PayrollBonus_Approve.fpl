@@ -1,0 +1,19 @@
+POLICY PayrollBonusApprove
+INPUT
+  baseSalary: decimal
+  performanceRating: int
+  tenureYears: int
+OUTPUT
+  bonusAmount: decimal
+  payoutBand: int
+WHEN
+  baseSalary >= 70000 AND performanceRating >= 4 AND tenureYears >= 2
+THEN
+  APPROVE
+  SET bonusAmount = 18000
+  SET payoutBand = 1
+ELSE
+  REJECT
+  SET bonusAmount = 0
+  SET payoutBand = 0
+END

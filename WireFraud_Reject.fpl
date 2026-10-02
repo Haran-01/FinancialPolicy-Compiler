@@ -1,0 +1,19 @@
+POLICY WireFraudReject
+INPUT
+  amount: decimal
+  riskScore: int
+  accountAgeDays: int
+OUTPUT
+  riskTier: int
+  holdHours: int
+WHEN
+  amount <= 50000 AND riskScore < 40 AND accountAgeDays >= 90
+THEN
+  APPROVE
+  SET riskTier = 1
+  SET holdHours = 0
+ELSE
+  REJECT
+  SET riskTier = 3
+  SET holdHours = 72
+END

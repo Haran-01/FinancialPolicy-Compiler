@@ -1,0 +1,19 @@
+POLICY InsuranceClaimReview
+INPUT
+  claimAmount: decimal
+  coverageActive: int
+  deductibleMet: int
+OUTPUT
+  reimbursementRate: decimal
+  manualReviewFlag: int
+WHEN
+  claimAmount <= 10000 AND coverageActive == 1 AND deductibleMet == 1
+THEN
+  APPROVE
+  SET reimbursementRate = 90
+  SET manualReviewFlag = 0
+ELSE
+  REVIEW
+  SET reimbursementRate = 50
+  SET manualReviewFlag = 1
+END
