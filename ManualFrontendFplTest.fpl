@@ -1,0 +1,19 @@
+POLICY SmallBusinessGrant
+INPUT
+  yearsOperating: int
+  annualRevenue: decimal
+  employeeCount: int
+OUTPUT
+  grantAmount: decimal
+  reviewBand: int
+WHEN
+  yearsOperating >= 3 AND annualRevenue <= 500000 AND employeeCount >= 5
+THEN
+  APPROVE
+  SET grantAmount = 75000
+  SET reviewBand = 1
+ELSE
+  REVIEW
+  SET grantAmount = 15000
+  SET reviewBand = 2
+END

@@ -36,28 +36,28 @@ export function StudioStatusBar({
   return (
     <footer
       data-testid="studio-status-bar"
-      className="flex h-7 shrink-0 items-center justify-between border-t border-[#2D3148] bg-[#0F121C] px-3 font-mono text-[11px] text-[#94A3B8] select-none"
+      className="flex h-7 shrink-0 items-center justify-between border-t border-[#D8DEE9] bg-white px-3 font-mono text-[11px] text-[#64748B] select-none"
     >
       {/* Left: Compiler Status & Current Policy */}
       <div className="flex items-center gap-4">
         <span className="flex items-center gap-1.5">
           {compileStatus === 'FAILED' ? (
-            <AlertTriangle className="h-3.5 w-3.5 text-red-400" />
+            <AlertTriangle className="h-3.5 w-3.5 text-[#DC2626]" />
           ) : (
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+            <CheckCircle2 className="h-3.5 w-3.5 text-[#059669]" />
           )}
-          <span className="text-white">
+          <span className="text-[#111827]">
             Compiler: {compileStatus}
           </span>
         </span>
 
-        <span className="flex items-center gap-1.5 text-blue-400">
+        <span className="flex items-center gap-1.5 text-[#2563EB]">
           <FileCode2 className="h-3.5 w-3.5" />
           <span>{policyName || 'No Policy'}</span>
         </span>
 
         {!backendOnline && (
-          <span className="rounded bg-amber-500/20 px-1.5 py-0.2 text-[10px] font-semibold text-amber-300">
+          <span className="rounded bg-[#D97706]/10 px-1.5 py-0.2 text-[10px] font-semibold text-[#D97706]">
             Offline Local Mode
           </span>
         )}
@@ -66,14 +66,14 @@ export function StudioStatusBar({
       {/* Right: Compile Time, Execution Time, Cursor Position, Encoding, Dev Mode */}
       <div className="flex items-center gap-4">
         <span className="flex items-center gap-1">
-          <Clock className="h-3 w-3 text-blue-400" />
+          <Clock className="h-3 w-3 text-[#2563EB]" />
           <span>
             Compile: {compileTimeMs !== null ? `${compileTimeMs} ms` : '—'}
           </span>
         </span>
 
         <span className="flex items-center gap-1">
-          <Clock className="h-3 w-3 text-emerald-400" />
+          <Clock className="h-3 w-3 text-[#059669]" />
           <span>
             Exec: {executionTimeMs !== null ? `${executionTimeMs} ms` : '—'}
           </span>
@@ -86,7 +86,7 @@ export function StudioStatusBar({
         <span>{encoding}</span>
 
         {developerMode && (
-          <span className="inline-flex items-center gap-1 rounded bg-amber-500/20 px-1.5 py-0.2 text-[10px] font-bold text-amber-400">
+          <span className="inline-flex items-center gap-1 rounded bg-[#0F766E]/10 px-1.5 py-0.2 text-[10px] font-bold text-[#0F766E]">
             <TerminalSquare className="h-3 w-3" /> DEV MODE
           </span>
         )}

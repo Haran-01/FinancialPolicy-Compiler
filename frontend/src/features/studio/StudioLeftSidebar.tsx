@@ -19,6 +19,7 @@ import {
 import { useStudioStore } from '@/stores/studio.store'
 import { usePolicyWorkspaceStore, WorkspacePolicy } from '@/stores/policy-workspace.store'
 import { toast } from 'sonner'
+import { detectPolicySourceLanguage } from '@/lib/c-policy-engine'
 
 export function StudioLeftSidebar() {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -26,7 +27,6 @@ export function StudioLeftSidebar() {
     activePolicyId,
     openPolicyTab,
     closePolicyTab,
-    settings,
     pushNotification,
   } = useStudioStore()
 
@@ -53,10 +53,9 @@ export function StudioLeftSidebar() {
   const [showFolderInput, setShowFolderInput] = useState(false)
 
   const activePolicies = policies.filter((p) => !p.isArchived)
-  const isLight = settings.theme === 'light'
-
   const handleOpenPolicy = (pol: WorkspacePolicy) => {
-    openPolicyTab(pol.id, pol.name)
+    const ext = detectPolicySourceLanguage(pol.sourceCode) === 'c-policy' ? '.c' : '.fpl'
+    openPolicyTab(pol.id, `${pol.name}${ext}`)
   }
 
   const handleCreateNewPolicy = () => {
@@ -81,8 +80,9 @@ export function StudioLeftSidebar() {
     reader.onload = () => {
       const content = String(reader.result ?? '')
       const imported = importFplFile(file.name, content)
-      openPolicyTab(imported.id, imported.name)
-      toast.success(`Imported ${imported.name}.fpl`)
+      const ext = detectPolicySourceLanguage(imported.sourceCode) === 'c-policy' ? '.c' : '.fpl'
+      openPolicyTab(imported.id, `${imported.name}${ext}`)
+      toast.success(`Imported ${imported.name}${ext}`)
     }
     reader.readAsText(file)
     e.target.value = ''
@@ -91,23 +91,19 @@ export function StudioLeftSidebar() {
   return (
     <aside
       data-testid="studio-left-sidebar"
-      className={`flex h-full flex-col border-r text-xs select-none ${
-        isLight
-          ? 'border-slate-200 bg-slate-50 text-slate-800'
-          : 'border-[#2D3148] bg-[#141722] text-[#CBD5E1]'
-      }`}
+      className="flex h-full flex-col border-r border-[#D8DEE9] bg-white text-xs text-[#111827] select-none"
     >
       <input
         ref={fileInputRef}
         type="file"
-        accept=".fpl,.txt"
+        accept=".fpl,.c,.txt"
         onChange={handleImport}
         className="hidden"
       />
 
       {/* Quick File Actions Toolbar */}
-      <div className="flex items-center justify-between border-b border-[#2D3148] px-3 py-2">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-[#94A3B8]">
+      <div className="flex items-center justify-between border-b border-[#D8DEE9] px-3 py-2">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">
           Policy Files
         </span>
 
@@ -116,21 +112,21 @@ export function StudioLeftSidebar() {
             onClick={handleCreateNewPolicy}
             title="New Policy"
             data-testid="studio-new-policy-btn"
-            className="rounded p-1 text-[#94A3B8] hover:bg-[#222536] hover:text-white"
+            className="rounded p-1 text-[#64748B] hover:bg-[#F6F8FB] hover:text-[#2563EB]"
           >
             <Plus className="h-3.5 w-3.5" />
           </button>
           <button
             onClick={() => setShowFolderInput((v) => !v)}
             title="New Folder"
-            className="rounded p-1 text-[#94A3B8] hover:bg-[#222536] hover:text-white"
+            className="rounded p-1 text-[#64748B] hover:bg-[#F6F8FB] hover:text-[#2563EB]"
           >
             <FolderPlus className="h-3.5 w-3.5" />
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
-            title="Import .fpl File"
-            className="rounded p-1 text-[#94A3B8] hover:bg-[#222536] hover:text-white"
+            title="Import .fpl or C Policy File"
+            className="rounded p-1 text-[#64748B] hover:bg-[#F6F8FB] hover:text-[#2563EB]"
           >
             <Upload className="h-3.5 w-3.5" />
           </button>
@@ -138,13 +134,13 @@ export function StudioLeftSidebar() {
       </div>
 
       {showFolderInput && (
-        <div className="flex items-center gap-1.5 border-b border-[#2D3148] px-3 py-2">
+        <div className="flex items-center gap-1.5 border-b border-[#D8DEE9] px-3 py-2">
           <input
             type="text"
             value={newFolderInput}
             onChange={(e) => setNewFolderInput(e.target.value)}
             placeholder="New folder name..."
-            className="flex-1 rounded border border-[#2D3148] bg-[#0F1117] px-2 py-1 text-xs text-white focus:border-blue-500 focus:outline-none"
+            className="flex-1 rounded border border-[#D8DEE9] bg-[#FBFCFE] px-2 py-1 text-xs text-[#111827] focus:border-[#2563EB] focus:outline-none"
           />
           <button
             onClick={() => {
@@ -155,7 +151,7 @@ export function StudioLeftSidebar() {
                 toast.success('Folder created')
               }
             }}
-            className="rounded bg-blue-600 px-2 py-1 text-[11px] font-medium text-white"
+            className="rounded bg-[#2563EB] px-2 py-1 text-[11px] font-medium text-white"
           >
             Add
           </button>
@@ -180,7 +176,7 @@ export function StudioLeftSidebar() {
                         [folder.id]: !isOpen,
                       }))
                     }
-                    className="flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-xs font-medium text-[#CBD5E1] hover:bg-[#222536]"
+                    className="flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-xs font-medium text-[#111827] hover:bg-[#F6F8FB]"
                   >
                     <span className="flex items-center gap-1.5 truncate">
                       {isOpen ? (
@@ -207,7 +203,7 @@ export function StudioLeftSidebar() {
                   </button>
 
                   {isOpen && (
-                    <div className="ml-4 mt-0.5 space-y-0.5 border-l border-[#2D3148]/60 pl-2">
+                    <div className="ml-4 mt-0.5 space-y-0.5 border-l border-[#D8DEE9] pl-2">
                       {folderPolicies.map((pol) => {
                         const isSelected = pol.id === activePolicyId
                         return (
@@ -215,8 +211,8 @@ export function StudioLeftSidebar() {
                             key={pol.id}
                             className={`group flex items-center justify-between rounded-md px-2 py-1 transition-colors ${
                               isSelected
-                                ? 'bg-blue-600/20 font-semibold text-blue-400'
-                                : 'text-[#94A3B8] hover:bg-[#222536] hover:text-white'
+                                ? 'bg-[#2563EB]/10 font-semibold text-[#2563EB]'
+                                : 'text-[#64748B] hover:bg-[#F6F8FB] hover:text-[#111827]'
                             }`}
                           >
                             {renamingId === pol.id ? (
@@ -233,7 +229,7 @@ export function StudioLeftSidebar() {
                                   if (e.key === 'Escape') setRenamingId(null)
                                 }}
                                 onBlur={() => setRenamingId(null)}
-                                className="w-full rounded border border-blue-500 bg-[#0F1117] px-1.5 py-0.5 font-mono text-xs text-white"
+                                className="w-full rounded border border-[#2563EB] bg-[#FBFCFE] px-1.5 py-0.5 font-mono text-xs text-[#111827]"
                                 autoFocus
                               />
                             ) : (
@@ -241,9 +237,9 @@ export function StudioLeftSidebar() {
                                 onClick={() => handleOpenPolicy(pol)}
                                 className="flex flex-1 items-center gap-1.5 truncate text-left"
                               >
-                                <FileCode2 className="h-3.5 w-3.5 shrink-0 text-blue-400" />
+                                <FileCode2 className="h-3.5 w-3.5 shrink-0 text-[#2563EB]" />
                                 <span className="truncate font-mono">
-                                  {pol.name}.fpl
+                                  {pol.name}{detectPolicySourceLanguage(pol.sourceCode) === 'c-policy' ? '.c' : '.fpl'}
                                 </span>
                               </button>
                             )}
@@ -256,7 +252,7 @@ export function StudioLeftSidebar() {
                                   setRenameValue(pol.name)
                                 }}
                                 title="Rename"
-                                className="rounded p-0.5 text-[#94A3B8] hover:text-white"
+                                className="rounded p-0.5 text-[#64748B] hover:text-[#111827]"
                               >
                                 <Edit3 className="h-3 w-3" />
                               </button>
@@ -266,12 +262,13 @@ export function StudioLeftSidebar() {
                                     folders.find((f) => f.id !== pol.folderId) ??
                                     folders[0]
                                   movePolicyToFolder(pol.id, nextFolder.id)
+                                  const ext = detectPolicySourceLanguage(pol.sourceCode) === 'c-policy' ? '.c' : '.fpl'
                                   toast.success(
-                                    `Moved ${pol.name}.fpl to ${nextFolder.name}`,
+                                    `Moved ${pol.name}${ext} to ${nextFolder.name}`,
                                   )
                                 }}
                                 title="Move to Next Folder"
-                                className="rounded p-0.5 text-[#94A3B8] hover:text-amber-400"
+                                className="rounded p-0.5 text-[#64748B] hover:text-[#D97706]"
                               >
                                 <Folder className="h-3 w-3" />
                               </button>
@@ -279,10 +276,11 @@ export function StudioLeftSidebar() {
                                 onClick={() => {
                                   closePolicyTab(pol.id)
                                   deletePolicy(pol.id, false)
-                                  toast.success(`Deleted ${pol.name}.fpl`)
+                                  const ext = detectPolicySourceLanguage(pol.sourceCode) === 'c-policy' ? '.c' : '.fpl'
+                                  toast.success(`Deleted ${pol.name}${ext}`)
                                 }}
                                 title="Delete"
-                                className="rounded p-0.5 text-[#94A3B8] hover:text-red-400"
+                                className="rounded p-0.5 text-[#64748B] hover:text-[#DC2626]"
                               >
                                 <Trash2 className="h-3 w-3" />
                               </button>

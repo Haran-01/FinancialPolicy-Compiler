@@ -50,11 +50,11 @@ export function StudioModals(_: StudioModalsProps) {
       {globalSearchOpen && (
         <div
           data-testid="studio-global-search-modal"
-          className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 pt-20 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-start justify-center bg-[#111827]/35 pt-20 backdrop-blur-xs"
         >
-          <div className="w-full max-w-xl overflow-hidden rounded-xl border border-[#2D3148] bg-[#1A1D27] shadow-2xl">
-            <div className="flex items-center gap-2 border-b border-[#2D3148] px-4 py-3">
-              <Search className="h-4 w-4 text-blue-400" />
+          <div className="w-full max-w-xl overflow-hidden rounded-xl border border-[#D8DEE9] bg-white">
+            <div className="flex items-center gap-2 border-b border-[#D8DEE9] px-4 py-3">
+              <Search className="h-4 w-4 text-[#2563EB]" />
               <input
                 type="text"
                 value={searchQuery}
@@ -65,12 +65,12 @@ export function StudioModals(_: StudioModalsProps) {
                   }
                 }}
                 placeholder="Search policies, source code, symbols, and tags..."
-                className="flex-1 bg-transparent text-xs text-white focus:outline-none"
+                className="flex-1 bg-transparent text-xs text-[#111827] focus:outline-none"
                 autoFocus
               />
               <button
                 onClick={() => setGlobalSearchOpen(false)}
-                className="text-[#64748B] hover:text-white"
+                className="text-[#64748B] hover:text-[#111827]"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -83,7 +83,7 @@ export function StudioModals(_: StudioModalsProps) {
                   <button
                     key={rs}
                     onClick={() => setSearchQuery(rs)}
-                    className="rounded bg-[#0F1117] px-2 py-0.5 text-[#94A3B8] hover:text-white"
+                    className="rounded bg-[#F6F8FB] px-2 py-0.5 text-[#64748B] hover:text-[#111827]"
                   >
                     {rs}
                   </button>
@@ -99,12 +99,12 @@ export function StudioModals(_: StudioModalsProps) {
                       openPolicyTab(pol.id, pol.name)
                       setGlobalSearchOpen(false)
                     }}
-                    className="flex w-full items-center justify-between rounded-lg border border-[#2D3148]/60 bg-[#0F1117]/70 px-3 py-2 text-left hover:border-blue-500/50"
+                    className="flex w-full items-center justify-between rounded-lg border border-[#D8DEE9] bg-[#FBFCFE] px-3 py-2 text-left hover:border-[#2563EB]"
                   >
                     <div className="flex items-center gap-2">
-                      <FileCode2 className="h-4 w-4 text-blue-400" />
+                      <FileCode2 className="h-4 w-4 text-[#2563EB]" />
                       <div>
-                        <div className="font-mono font-semibold text-white">
+                        <div className="font-mono font-semibold text-[#111827]">
                           {pol.name}.fpl
                         </div>
                         <div className="text-[10px] text-[#64748B]">
@@ -112,7 +112,7 @@ export function StudioModals(_: StudioModalsProps) {
                         </div>
                       </div>
                     </div>
-                    <span className="rounded bg-[#222536] px-2 py-0.5 text-[10px] text-[#94A3B8]">
+                    <span className="rounded bg-white px-2 py-0.5 text-[10px] text-[#64748B]">
                       {pol.categoryName}
                     </span>
                   </button>

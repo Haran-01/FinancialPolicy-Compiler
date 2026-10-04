@@ -259,13 +259,18 @@ export const FPL_LIGHT_THEME: Monaco.editor.IStandaloneThemeData = {
     { token: 'operator', foreground: '334155' },
   ],
   colors: {
-    'editor.background': '#FFFFFF',
-    'editor.foreground': '#0F172A',
+    'editor.background': '#FBFCFE',
+    'editor.foreground': '#111827',
     'editorLineNumber.foreground': '#94A3B8',
     'editorLineNumber.activeForeground': '#1E293B',
     'editor.selectionBackground': '#2563EB26',
-    'editor.lineHighlightBackground': '#F1F5F9',
+    'editor.lineHighlightBackground': '#F6F8FB',
     'editorCursor.foreground': '#2563EB',
+    'editorGutter.background': '#FBFCFE',
+    'minimap.background': '#FBFCFE',
+    'editorWhitespace.foreground': '#D8DEE9',
+    'editorIndentGuide.background': '#D8DEE9',
+    'editorIndentGuide.activeBackground': '#94A3B8',
   },
 };
 

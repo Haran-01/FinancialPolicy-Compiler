@@ -9,7 +9,7 @@ import Editor, { useMonaco } from '@monaco-editor/react'
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
 import { WifiOff, ShieldAlert, FileWarning, Plus } from 'lucide-react'
 import { registerFplLanguage } from '@/lib/fpl-language'
-import { analyzeFplSemantics } from '@/lib/fpl-semantic-engine'
+import { analyzePolicySource, detectPolicySourceLanguage } from '@/lib/c-policy-engine'
 import {
   useStudioStore,
   SuggestedProblemFix,
@@ -89,6 +89,8 @@ export function FinPolicyStudioPage() {
 
   const currentSource =
     activeTab?.unsavedSource ?? activePolicy?.sourceCode ?? ''
+  const currentSourceLanguage = detectPolicySourceLanguage(currentSource)
+  const currentExtension = currentSourceLanguage === 'c-policy' ? '.c' : '.fpl'
 
   const [lastCompile, setLastCompile] =
     useState<WorkspaceCompilationRecord | null>(null)
@@ -108,14 +110,12 @@ export function FinPolicyStudioPage() {
       2,
     ),
   )
-  const isLight = settings.theme === 'light'
-
   useEffect(() => {
     if (monaco) {
       registerFplLanguage(monaco)
-      monaco.editor.setTheme(isLight ? 'fpl-light' : 'fpl-dark')
+      monaco.editor.setTheme('fpl-light')
     }
-  }, [monaco, isLight])
+  }, [monaco])
 
   useEffect(() => {
     setLastExecution(null)
@@ -124,7 +124,7 @@ export function FinPolicyStudioPage() {
   // Compute Problems Panel diagnostics & suggested fixes
   const problems: SuggestedProblemFix[] = useMemo(() => {
     if (!currentSource.trim()) return []
-    const sem = analyzeFplSemantics(currentSource)
+    const sem = analyzePolicySource(currentSource)
     return sem.diagnostics.map((d, idx) => ({
       id: `prob-${idx}-${d.code}`,
       severity: d.severity === 'ERROR' ? 'error' : 'warning',
@@ -136,9 +136,11 @@ export function FinPolicyStudioPage() {
         d.suggestion ||
         (d.message.toLowerCase().includes('undeclared')
           ? 'Declare this identifier in the INPUT or OUTPUT block before referencing it.'
-          : 'Verify FPL syntax and type annotations on this line.'),
+          : currentSourceLanguage === 'c-policy'
+            ? 'Verify the supported C Policy subset: declarations, one if/else block, assignments, and approve/reject/review calls.'
+            : 'Verify FPL syntax and type annotations on this line.'),
     }))
-  }, [currentSource])
+  }, [currentSource, currentSourceLanguage])
 
   // Auto-save debounce when enabled in settings
   useEffect(() => {
@@ -149,10 +151,10 @@ export function FinPolicyStudioPage() {
         createNewVersion: false,
       })
       markTabSaved(activePolicy.id)
-      appendStudioLog(`[AUTO-SAVE] Saved ${activePolicy.name}.fpl`)
+      appendStudioLog(`[AUTO-SAVE] Saved ${activePolicy.name}${currentExtension}`)
     }, 1500)
     return () => clearTimeout(timer)
-  }, [currentSource, settings.autoSave, activePolicy, activeTab?.isDirty])
+  }, [currentSource, currentExtension, settings.autoSave, activePolicy, activeTab?.isDirty])
 
   const handleSave = useCallback(() => {
     if (!activePolicy) return
@@ -164,16 +166,19 @@ export function FinPolicyStudioPage() {
     pushNotification(
       'POLICY_SAVED',
       'Policy Saved',
-      `${activePolicy.name}.fpl saved successfully.`,
+      `${activePolicy.name}${currentExtension} saved successfully.`,
     )
-    appendStudioLog(`[SAVE] Saved ${activePolicy.name}.fpl`)
-    toast.success(`Saved ${activePolicy.name}.fpl`)
-  }, [activePolicy, currentSource, updatePolicy, markTabSaved, pushNotification, appendStudioLog])
+    appendStudioLog(`[SAVE] Saved ${activePolicy.name}${currentExtension}`)
+    toast.success(`Saved ${activePolicy.name}${currentExtension}`)
+  }, [activePolicy, currentSource, currentExtension, updatePolicy, markTabSaved, pushNotification, appendStudioLog])
 
   const handleCompile = useCallback(async () => {
     if (!activePolicy) return
     let res = compilePolicy(activePolicy.id, currentSource)
     try {
+      if (currentSourceLanguage === 'c-policy') {
+        throw new Error('C Policy Mode uses local C-subset compiler frontend')
+      }
       const backend = await compilerService.compile({
         policyId: activePolicy.id,
         source: currentSource,
@@ -203,14 +208,18 @@ export function FinPolicyStudioPage() {
       }
       appendCompilerOutput('[backend] Compiled with FinPolicy compiler API')
     } catch {
-      appendCompilerOutput('[local] Backend unavailable; used local compiler fallback')
+      appendCompilerOutput(
+        currentSourceLanguage === 'c-policy'
+          ? '[local] C Policy Mode lowered to shared IR/FPVM'
+          : '[local] Backend unavailable; used local compiler fallback',
+      )
     }
     setLastCompile(res)
     appendCompilerOutput(
-      `[${new Date().toLocaleTimeString()}] Building ${activePolicy.name}.fpl... ${res.status} (${res.compilationTimeMs} ms, ${res.errorCount} errors, ${res.warningCount} warnings)`,
+      `[${new Date().toLocaleTimeString()}] Building ${activePolicy.name}${currentExtension}... ${res.status} (${res.compilationTimeMs} ms, ${res.errorCount} errors, ${res.warningCount} warnings)`,
     )
     appendStudioLog(
-      `[COMPILE] ${activePolicy.name}.fpl -> ${res.status} in ${res.compilationTimeMs} ms`,
+      `[COMPILE] ${activePolicy.name}${currentExtension} -> ${res.status} in ${res.compilationTimeMs} ms`,
     )
 
     if (res.status === 'FAILED') {
@@ -218,7 +227,7 @@ export function FinPolicyStudioPage() {
       pushNotification(
         'COMPILATION_FAILURE',
         'Compilation Failed',
-        `${activePolicy.name}.fpl failed with ${res.errorCount} error(s).`,
+        `${activePolicy.name}${currentExtension} failed with ${res.errorCount} error(s).`,
       )
       toast.error(`Compilation failed (${res.errorCount} errors)`)
     } else {
@@ -226,13 +235,15 @@ export function FinPolicyStudioPage() {
       pushNotification(
         'COMPILATION_SUCCESS',
         'Compilation Succeeded',
-        `${activePolicy.name}.fpl compiled in ${res.compilationTimeMs} ms.`,
+        `${activePolicy.name}${currentExtension} compiled in ${res.compilationTimeMs} ms.`,
       )
-      toast.success(`Compiled ${activePolicy.name}.fpl (${res.compilationTimeMs} ms)`)
+      toast.success(`Compiled ${activePolicy.name}${currentExtension} (${res.compilationTimeMs} ms)`)
     }
   }, [
     activePolicy,
     currentSource,
+    currentSourceLanguage,
+    currentExtension,
     settings.compilerOptimizationLevel,
     developerMode,
     compilePolicy,
@@ -261,6 +272,9 @@ export function FinPolicyStudioPage() {
 
     let res: WorkspaceExecutionRecord | null = null
     try {
+      if (currentSourceLanguage === 'c-policy') {
+        throw new Error('C Policy Mode uses local C-subset compiler frontend')
+      }
       const backend: RunResponse = await compilerService.run({
         policyId: activePolicy.id,
         source: currentSource,
@@ -323,7 +337,11 @@ export function FinPolicyStudioPage() {
       }
     } catch {
       res = executePolicy(activePolicy.id, parsedInputs, currentSource)
-      appendCompilerOutput('[local] Backend unavailable; used local VM fallback')
+      appendCompilerOutput(
+        currentSourceLanguage === 'c-policy'
+          ? '[local] C Policy Mode executed on shared FPVM'
+          : '[local] Backend unavailable; used local VM fallback',
+      )
     }
     if (!res) {
       res = executePolicy(activePolicy.id, parsedInputs, currentSource)
@@ -333,7 +351,7 @@ export function FinPolicyStudioPage() {
     setActiveBottomTab('execution')
     setActiveRightTab('results')
     appendStudioLog(
-      `[EXECUTE] ${activePolicy.name}.fpl -> Decision: ${res.decision} (${res.executionTimeMs} ms)`,
+      `[EXECUTE] ${activePolicy.name}${currentExtension} -> Decision: ${res.decision} (${res.executionTimeMs} ms)`,
     )
 
     if (res.status === 'FAILED') {
@@ -347,7 +365,7 @@ export function FinPolicyStudioPage() {
       pushNotification(
         'EXECUTION_SUCCESS',
         `Execution Decision: ${res.decision}`,
-        `${activePolicy.name}.fpl completed in ${res.executionTimeMs} ms.`,
+        `${activePolicy.name}${currentExtension} completed in ${res.executionTimeMs} ms.`,
       )
       toast.success(`Decision: ${res.decision} (${res.executionTimeMs} ms)`)
     }
@@ -355,6 +373,8 @@ export function FinPolicyStudioPage() {
     activePolicy,
     runtimeInputsJson,
     currentSource,
+    currentSourceLanguage,
+    currentExtension,
     settings.compilerOptimizationLevel,
     executePolicy,
     appendCompilerOutput,
@@ -366,10 +386,14 @@ export function FinPolicyStudioPage() {
 
   const handleFormat = useCallback(() => {
     if (!activePolicy) return
+    if (currentSourceLanguage === 'c-policy') {
+      toast.info('C Policy Mode formatting is not applied; source was left unchanged.')
+      return
+    }
     const formatted = formatFplPolicyCode(currentSource)
     updateTabSource(activePolicy.id, formatted, true)
     toast.success('Formatted FPL policy')
-  }, [activePolicy, currentSource, updateTabSource])
+  }, [activePolicy, currentSource, currentSourceLanguage, updateTabSource])
 
   const handleNavigateToLine = (line: number, column: number) => {
     setCursorPosition(line, column)
@@ -408,9 +432,7 @@ export function FinPolicyStudioPage() {
   return (
     <div
       data-testid="finpolicy-studio-ide"
-      className={`flex h-screen w-screen flex-col overflow-hidden ${
-        isLight ? 'bg-slate-100 text-slate-900' : 'bg-[#0D0F18] text-[#F1F5F9]'
-      }`}
+      className="flex h-screen w-screen flex-col overflow-hidden bg-[#F6F8FB] text-[#111827]"
     >
       {/* Top Navigation */}
       <StudioTopNavigation />
@@ -454,7 +476,7 @@ export function FinPolicyStudioPage() {
             <StudioLeftSidebar />
           </Panel>
 
-          <PanelResizeHandle className="w-1 bg-[#2D3148] hover:bg-blue-500 transition-colors" />
+          <PanelResizeHandle className="w-1 bg-[#D8DEE9] hover:bg-[#2563EB] transition-colors" />
 
           {/* Center: Editor Toolbar + Monaco Editor (with Split View) + Bottom Panel + Collapsible Developer Panel */}
           <Panel defaultSize={58} minSize={35}>
@@ -500,14 +522,14 @@ export function FinPolicyStudioPage() {
                       /* Missing Policy Empty Fallback */
                       <div
                         data-testid="studio-missing-policy"
-                        className="flex h-full flex-col items-center justify-center gap-3 bg-[#0D0F18] p-6 text-center"
+                        className="flex h-full flex-col items-center justify-center gap-3 bg-[#FBFCFE] p-6 text-center"
                       >
                         <FileWarning className="h-10 w-10 text-[#64748B]" />
-                        <div className="text-sm font-semibold text-white">
+                        <div className="text-sm font-semibold text-[#111827]">
                           No Active Policy Open
                         </div>
                         <p className="max-w-sm text-xs text-[#64748B]">
-                          Select a policy from the Project Explorer on the left or create a new Financial Policy (.fpl) file.
+                          Select a policy from the Project Explorer on the left or create a new Financial Policy file.
                         </p>
                         <button
                           onClick={() => {
@@ -516,7 +538,7 @@ export function FinPolicyStudioPage() {
                             })
                             openPolicyTab(created.id, created.name)
                           }}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-blue-500"
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-[#2563EB] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#1D4ED8]"
                         >
                           <Plus className="h-4 w-4" /> Create New Policy
                         </button>
@@ -524,20 +546,20 @@ export function FinPolicyStudioPage() {
                     ) : (
                       <div
                         className={`grid h-full ${
-                          splitEditorEnabled ? 'grid-cols-2 divide-x divide-[#2D3148]' : 'grid-cols-1'
+                          splitEditorEnabled ? 'grid-cols-2 divide-x divide-[#D8DEE9]' : 'grid-cols-1'
                         }`}
                       >
                         {/* Primary Monaco Editor */}
                         <div className="h-full overflow-hidden">
                           <Editor
                             height="100%"
-                            language="fpl"
-                            theme={isLight ? 'fpl-light' : 'fpl-dark'}
+                            language={currentSourceLanguage === 'c-policy' ? 'c' : 'fpl'}
+                            theme="fpl-light"
                             beforeMount={registerFplLanguage}
                             value={currentSource}
                             onMount={(editor, monacoInstance) => {
                               primaryEditorRef.current = editor
-                              monacoInstance.editor.setTheme(isLight ? 'fpl-light' : 'fpl-dark')
+                              monacoInstance.editor.setTheme('fpl-light')
                               editor.layout()
                               editor.onDidChangeCursorPosition((e) => {
                                 setCursorPosition(
@@ -579,19 +601,19 @@ export function FinPolicyStudioPage() {
                             data-testid="studio-secondary-split-editor"
                             className="h-full overflow-hidden"
                           >
-                            <div className="border-b border-[#2D3148] bg-[#141722] px-3 py-1 font-mono text-[11px] text-[#94A3B8]">
+                            <div className="border-b border-[#D8DEE9] bg-white px-3 py-1 font-mono text-[11px] text-[#64748B]">
                               Split View: {secondaryPolicy?.name ?? activePolicy.name}.fpl
                             </div>
                             <Editor
                               height="calc(100% - 26px)"
-                              language="fpl"
-                              theme={isLight ? 'fpl-light' : 'fpl-dark'}
+                              language={detectPolicySourceLanguage(secondaryPolicy?.sourceCode ?? currentSource) === 'c-policy' ? 'c' : 'fpl'}
+                              theme="fpl-light"
                               beforeMount={registerFplLanguage}
                               value={
                                 secondaryPolicy?.sourceCode ?? currentSource
                               }
                               onMount={(editor, monacoInstance) => {
-                                monacoInstance.editor.setTheme(isLight ? 'fpl-light' : 'fpl-dark')
+                                monacoInstance.editor.setTheme('fpl-light')
                                 editor.layout()
                               }}
                               options={{
@@ -609,7 +631,7 @@ export function FinPolicyStudioPage() {
                     )}
                   </Panel>
 
-                  <PanelResizeHandle className="h-1 bg-[#2D3148] hover:bg-blue-500 transition-colors" />
+                  <PanelResizeHandle className="h-1 bg-[#D8DEE9] hover:bg-[#2563EB] transition-colors" />
 
                   {/* Bottom Panel: Problems, Compiler Output, Execution Console, Logs, Terminal */}
                   <Panel defaultSize={36} minSize={16}>
@@ -636,7 +658,7 @@ export function FinPolicyStudioPage() {
             </div>
           </Panel>
 
-          <PanelResizeHandle className="w-1 bg-[#2D3148] hover:bg-blue-500 transition-colors" />
+          <PanelResizeHandle className="w-1 bg-[#D8DEE9] hover:bg-[#2563EB] transition-colors" />
 
           {/* Right Sidebar: Properties & Execution Results */}
           <Panel defaultSize={22} minSize={16} maxSize={34}>
@@ -650,7 +672,7 @@ export function FinPolicyStudioPage() {
 
       {/* Bottom Status Bar */}
       <StudioStatusBar
-        policyName={activePolicy ? `${activePolicy.name}.fpl` : 'None'}
+        policyName={activePolicy ? `${activePolicy.name}${currentExtension}` : 'None'}
         compileStatus={
           lastCompile
             ? lastCompile.status

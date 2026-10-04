@@ -4,39 +4,39 @@
 
 /* ─── CSS Design Tokens ──────────────────────────────────────────────────── */
 :root {
-  --background: #0F1117;
-  --surface: #1A1D27;
-  --surface-elevated: #222536;
-  --surface-hover: #262A3A;
-  --border: #2D3148;
-  --border-subtle: #1E2135;
+  --background: #F6F8FB;
+  --surface: #FFFFFF;
+  --surface-elevated: #FBFCFE;
+  --surface-hover: #F1F5F9;
+  --border: #D8DEE9;
+  --border-subtle: #E8EDF5;
 
   --primary: #2563EB;
   --primary-hover: #1D4ED8;
-  --primary-muted: #1E3A8A;
+  --primary-muted: #DBEAFE;
 
-  --text-primary: #F1F5F9;
-  --text-secondary: #CBD5E1;
+  --text-primary: #111827;
+  --text-secondary: #334155;
   --text-muted: #64748B;
-  --text-disabled: #334155;
+  --text-disabled: #94A3B8;
 
-  --success: #10B981;
-  --success-muted: #064E3B;
-  --error: #EF4444;
-  --error-muted: #450A0A;
-  --warning: #F59E0B;
-  --warning-muted: #451A03;
-  --accent: #3B82F6;
+  --success: #059669;
+  --success-muted: #D1FAE5;
+  --error: #DC2626;
+  --error-muted: #FEE2E2;
+  --warning: #D97706;
+  --warning-muted: #FEF3C7;
+  --accent: #0F766E;
 
   --radius: 0.5rem;
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
   /* Monaco / code area */
-  --code-bg: #0D0F18;
-  --code-selection: rgba(37, 99, 235, 0.35);
-  --code-line-highlight: rgba(255, 255, 255, 0.04);
-  --code-gutter: #1A1D27;
+  --code-bg: #FBFCFE;
+  --code-selection: rgba(37, 99, 235, 0.18);
+  --code-line-highlight: #F6F8FB;
+  --code-gutter: #FBFCFE;
 }
 
 /* ─── Base Styles ────────────────────────────────────────────────────────── */
@@ -84,7 +84,7 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--surface);
+  background: var(--background);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -93,11 +93,11 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3D4464;
+  background: #94A3B8;
 }
 
 ::-webkit-scrollbar-corner {
-  background: var(--surface);
+  background: var(--background);
 }
 
 /* Firefox */
@@ -108,13 +108,13 @@
 
 /* ─── Text Selection ─────────────────────────────────────────────────────── */
 ::selection {
-  background-color: rgba(37, 99, 235, 0.4);
-  color: #F1F5F9;
+  background-color: rgba(37, 99, 235, 0.18);
+  color: #111827;
 }
 
 ::-moz-selection {
-  background-color: rgba(37, 99, 235, 0.4);
-  color: #F1F5F9;
+  background-color: rgba(37, 99, 235, 0.18);
+  color: #111827;
 }
 
 /* ─── Focus Rings ────────────────────────────────────────────────────────── */
@@ -127,11 +127,11 @@
 /* ─── Component Layer ────────────────────────────────────────────────────── */
 @layer components {
   .card {
-    @apply bg-surface border border-border rounded-lg shadow-card;
+    @apply bg-surface border border-border rounded-lg;
   }
 
   .card-hover {
-    @apply hover:bg-surface-hover hover:shadow-card-hover transition-all duration-200;
+    @apply hover:bg-surface-hover transition-all duration-200;
   }
 
   .input-base {
@@ -177,7 +177,7 @@
   }
 
   .code-block {
-    @apply bg-[#0D0F18] border border-border rounded-md p-4 font-mono text-sm
+    @apply bg-[#FBFCFE] border border-border rounded-md p-4 font-mono text-sm
            text-text-secondary overflow-auto;
   }
 

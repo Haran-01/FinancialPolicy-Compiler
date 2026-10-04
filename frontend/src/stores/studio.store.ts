@@ -268,7 +268,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   sessionExpired: false,
 
   settings: {
-    theme: 'dark',
+    theme: 'light',
     editorFont: "'JetBrains Mono', monospace",
     fontSize: 13,
     tabSize: 2,
@@ -290,7 +290,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   openPolicyTab: (policyId, title) =>
     set((state) => {
-      const normalizedTitle = title.endsWith('.fpl') ? title : `${title}.fpl`
+      const normalizedTitle = /\.[A-Za-z0-9]+$/.test(title) ? title : `${title}.fpl`
       const exists = state.openTabs.some((t) => t.policyId === policyId)
       return {
         openTabs: exists
@@ -447,7 +447,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     set((state) => ({
       settings: {
         ...state.settings,
-        theme: state.settings.theme === 'dark' ? 'light' : 'dark',
+        theme: 'light',
       },
     })),
 

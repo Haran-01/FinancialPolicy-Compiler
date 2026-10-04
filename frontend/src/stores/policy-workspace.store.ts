@@ -6,9 +6,12 @@
  */
 
 import { create } from 'zustand'
-import { generateFplIR } from '@/lib/fpl-ir-engine'
-import { executeFplVM } from '@/lib/fpl-vm-engine'
-import { analyzeFplSemantics } from '@/lib/fpl-semantic-engine'
+import {
+  analyzePolicySource,
+  detectPolicySourceLanguage,
+  executePolicyVM,
+  generatePolicyIR,
+} from '@/lib/c-policy-engine'
 
 export type WorkspaceUserRole = 'ADMIN' | 'POLICY_MANAGER' | 'AUDITOR' | 'VIEWER'
 export type WorkspacePolicyStatus = 'DRAFT' | 'COMPILED' | 'PUBLISHED' | 'ARCHIVED' | 'DEPRECATED'
@@ -60,6 +63,7 @@ export interface WorkspacePolicyVersion {
   policyId: string
   versionNumber: number
   sourceCode: string
+  sourceLanguage?: 'fpl' | 'c-policy'
   changelog: string
   isLatest: boolean
   compilationStatus: WorkspaceCompileStatus
@@ -136,6 +140,7 @@ export interface WorkspacePolicy {
   slug: string
   description: string
   sourceCode: string
+  sourceLanguage?: 'fpl' | 'c-policy'
   status: WorkspacePolicyStatus
   categoryId: string
   categoryName: string
@@ -388,6 +393,49 @@ END`,
     updatedAt: '2026-10-01T12:00:00.000Z',
   },
   {
+    id: 'pol-c-loan-approval',
+    name: 'CLoanApproval',
+    slug: 'c-loan-approval',
+    description: 'C Policy Mode sample for personal loan approval using a supported C subset.',
+    sourceCode: `// @policy CLoanApproval
+int age;
+float salary;
+int creditScore;
+float interestRate;
+
+if (age >= 21 && salary >= 60000 && creditScore >= 700) {
+  approve();
+  interestRate = 8.5;
+} else {
+  reject();
+  interestRate = 14.0;
+}`,
+    sourceLanguage: 'c-policy',
+    status: 'DRAFT',
+    categoryId: 'cat-loan',
+    categoryName: 'Loan',
+    folderId: 'fld-banking',
+    tags: ['Banking'],
+    isFavorite: false,
+    isPinned: false,
+    isArchived: false,
+    latestVersion: 1,
+    authorId: 'usr-admin-01',
+    authorName: 'Aarav Mehta',
+    lastCompilationStatus: 'NEVER',
+    lastExecutionStatus: 'NEVER',
+    lastDecision: null,
+    compilationCount: 0,
+    executionCount: 0,
+    errorCount: 0,
+    warningCount: 0,
+    lastCompiledAt: null,
+    lastExecutedAt: null,
+    lastOpenedAt: null,
+    createdAt: '2026-10-04T10:00:00.000Z',
+    updatedAt: '2026-10-04T10:00:00.000Z',
+  },
+  {
     id: 'pol-insurance-claim',
     name: 'HealthInsuranceClaimAutoApprove',
     slug: 'health-insurance-claim-auto-approve',
@@ -555,6 +603,7 @@ END`,
     policyId: 'pol-loan-approval',
     versionNumber: 2,
     sourceCode: INITIAL_POLICIES[0].sourceCode,
+    sourceLanguage: INITIAL_POLICIES[0].sourceLanguage ?? 'fpl',
     changelog: 'Raised minimum salary threshold to 60000, added creditScore >= 700, lowered prime rate to 8.5%',
     isLatest: true,
     compilationStatus: 'SUCCESS',
@@ -567,6 +616,7 @@ END`,
     policyId: pol.id,
     versionNumber: 1,
     sourceCode: pol.sourceCode,
+    sourceLanguage: pol.sourceLanguage ?? detectPolicySourceLanguage(pol.sourceCode),
     changelog: 'Initial policy version v1',
     isLatest: true,
     compilationStatus: pol.lastCompilationStatus,
@@ -767,6 +817,7 @@ interface PolicyWorkspaceState {
     name: string
     description?: string
     sourceCode?: string
+    sourceLanguage?: 'fpl' | 'c-policy'
     categoryId?: string
     folderId?: string | null
     tags?: string[]
@@ -778,6 +829,7 @@ interface PolicyWorkspaceState {
       name?: string
       description?: string
       sourceCode?: string
+      sourceLanguage?: 'fpl' | 'c-policy'
       categoryId?: string
       folderId?: string | null
       tags?: string[]
@@ -849,6 +901,7 @@ ELSE
   REJECT
   SET interestRate = 14.0
 END`
+    const sourceLanguage = input.sourceLanguage ?? detectPolicySourceLanguage(defaultSource)
 
     const newPolicy: WorkspacePolicy = {
       id,
@@ -856,6 +909,7 @@ END`
       slug: `${slugify(input.name)}-${Math.floor(Math.random() * 900 + 100)}`,
       description: input.description ?? 'Enterprise Financial Policy rule.',
       sourceCode: defaultSource,
+      sourceLanguage,
       status: 'DRAFT',
       categoryId: category.id,
       categoryName: category.name,
@@ -886,6 +940,7 @@ END`
       policyId: id,
       versionNumber: 1,
       sourceCode: defaultSource,
+      sourceLanguage,
       changelog: 'Initial policy version v1',
       isLatest: true,
       compilationStatus: 'NEVER',
@@ -940,6 +995,8 @@ END`
       : state.categories.find((c) => c.id === existing.categoryId)!
 
     const nextSource = updates.sourceCode !== undefined ? updates.sourceCode : existing.sourceCode
+    const nextSourceLanguage =
+      updates.sourceLanguage ?? existing.sourceLanguage ?? detectPolicySourceLanguage(nextSource)
     const sourceChanged = updates.sourceCode !== undefined && updates.sourceCode !== existing.sourceCode
     const shouldVersion = Boolean(updates.createNewVersion || sourceChanged)
     const nextVersionNumber = shouldVersion ? existing.latestVersion + 1 : existing.latestVersion
@@ -949,6 +1006,7 @@ END`
       name: updates.name !== undefined ? updates.name.trim() : existing.name,
       description: updates.description !== undefined ? updates.description : existing.description,
       sourceCode: nextSource,
+      sourceLanguage: nextSourceLanguage,
       categoryId: category.id,
       categoryName: category.name,
       folderId: updates.folderId !== undefined ? updates.folderId : existing.folderId,
@@ -964,6 +1022,7 @@ END`
         policyId,
         versionNumber: nextVersionNumber,
         sourceCode: nextSource,
+        sourceLanguage: nextSourceLanguage,
         changelog: updates.versionNotes || `Updated policy to v${nextVersionNumber}`,
         isLatest: true,
         compilationStatus: existing.lastCompilationStatus,
@@ -1218,6 +1277,7 @@ END`
       policyId,
       versionNumber: nextVerNum,
       sourceCode,
+      sourceLanguage: detectPolicySourceLanguage(sourceCode),
       changelog: changelog.trim() || `Version v${nextVerNum} snapshot`,
       isLatest: true,
       compilationStatus: policy.lastCompilationStatus,
@@ -1241,7 +1301,13 @@ END`
     set({
       policies: state.policies.map((p) =>
         p.id === policyId
-          ? { ...p, sourceCode, latestVersion: nextVerNum, updatedAt: now }
+          ? {
+              ...p,
+              sourceCode,
+              sourceLanguage: detectPolicySourceLanguage(sourceCode),
+              latestVersion: nextVerNum,
+              updatedAt: now,
+            }
           : p,
       ),
       versions: [
@@ -1271,6 +1337,7 @@ END`
       policyId,
       versionNumber: nextVerNum,
       sourceCode: targetVer.sourceCode,
+      sourceLanguage: targetVer.sourceLanguage ?? detectPolicySourceLanguage(targetVer.sourceCode),
       changelog: `Restored from version v${versionNumber} (${targetVer.changelog})`,
       isLatest: true,
       compilationStatus: targetVer.compilationStatus,
@@ -1282,6 +1349,7 @@ END`
     const updatedPolicy: WorkspacePolicy = {
       ...policy,
       sourceCode: targetVer.sourceCode,
+      sourceLanguage: targetVer.sourceLanguage ?? detectPolicySourceLanguage(targetVer.sourceCode),
       latestVersion: nextVerNum,
       updatedAt: now,
     }
@@ -1324,8 +1392,8 @@ END`
     const sourceToCompile = sourceOverride ?? policy?.sourceCode ?? ''
     const startTime = performance.now()
 
-    const semanticRes = analyzeFplSemantics(sourceToCompile)
-    const irRes = generateFplIR(sourceToCompile)
+    const semanticRes = analyzePolicySource(sourceToCompile)
+    const irRes = generatePolicyIR(sourceToCompile)
     const durationMs = Number(Math.max(0.45, performance.now() - startTime).toFixed(2))
 
     const errors = semanticRes.diagnostics
@@ -1387,6 +1455,7 @@ END`
           ? {
               ...p,
               sourceCode: sourceToCompile,
+              sourceLanguage: detectPolicySourceLanguage(sourceToCompile),
               lastCompilationStatus: status,
               status: status !== 'FAILED' && p.status === 'DRAFT' ? 'COMPILED' : p.status,
               compilationCount: p.compilationCount + 1,
@@ -1406,8 +1475,8 @@ END`
     const state = get()
     const policy = state.policies.find((p) => p.id === policyId)
     const sourceToRun = sourceOverride ?? policy?.sourceCode ?? ''
-    const irBundle = generateFplIR(sourceToRun)
-    const vmRes = executeFplVM(sourceToRun, inputs)
+    const irBundle = generatePolicyIR(sourceToRun)
+    const vmRes = executePolicyVM(sourceToRun, inputs)
     const now = new Date().toISOString()
 
     const variablesMap: Record<string, unknown> = {}
@@ -1474,12 +1543,17 @@ END`
 
   importFplFile: (fileName, content, categoryId, folderId) => {
     const state = get()
+    const sourceLanguage = detectPolicySourceLanguage(content)
     const match = content.match(/\bPOLICY\s+([A-Za-z_][A-Za-z0-9_]*)/i)
-    const policyName = match?.[1] ?? (fileName.replace(/\.fpl$/i, '').trim() || 'ImportedPolicy')
+    const policyName =
+      match?.[1] ??
+      (fileName.replace(/\.(fpl|c|txt)$/i, '').trim() ||
+        (sourceLanguage === 'c-policy' ? 'ImportedCPolicy' : 'ImportedPolicy'))
     const created = state.createPolicy({
       name: policyName,
       description: `Imported from ${fileName}`,
       sourceCode: content,
+      sourceLanguage,
       categoryId: categoryId ?? 'cat-loan',
       folderId: folderId ?? 'fld-banking',
       tags: ['Banking'],

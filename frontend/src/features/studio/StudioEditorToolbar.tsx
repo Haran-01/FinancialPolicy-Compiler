@@ -59,7 +59,6 @@ export function StudioEditorToolbar({
     updateSettings,
   } = useStudioStore()
 
-  const isLight = settings.theme === 'light'
   const activeWorkspace =
     workspaces.find((w) => w.id === activeWorkspaceId) ?? workspaces[0]
   const activeTab = openTabs.find((t) => t.policyId === activePolicyId)
@@ -69,14 +68,10 @@ export function StudioEditorToolbar({
       data-testid="studio-editor-toolbar"
       role="toolbar"
       aria-label="FinPolicy Studio Editor Toolbar"
-      className={`flex flex-col border-b select-none ${
-        isLight
-          ? 'border-slate-200 bg-slate-100 text-slate-800'
-          : 'border-[#2D3148] bg-[#141722] text-[#CBD5E1]'
-      }`}
+      className="flex flex-col border-b border-[#D8DEE9] bg-white text-[#111827] select-none"
     >
       {/* Top Row: Open Policy File Tabs & Editor View Controls */}
-      <div className="flex items-center justify-between border-b border-[#2D3148]/70 px-2">
+      <div className="flex items-center justify-between border-b border-[#D8DEE9] px-2">
         <div
           role="tablist"
           aria-label="Open Policy Files"
@@ -98,11 +93,11 @@ export function StudioEditorToolbar({
                 }}
                 className={`group flex cursor-pointer items-center gap-2 rounded-t-md border-b-2 px-3 py-1.5 text-xs transition-colors ${
                   isActive
-                    ? 'border-blue-500 bg-[#1A1D27] font-semibold text-white'
-                    : 'border-transparent text-[#94A3B8] hover:bg-[#1A1D27]/50 hover:text-white'
+                    ? 'border-[#2563EB] bg-[#2563EB]/10 font-semibold text-[#2563EB]'
+                    : 'border-transparent text-[#64748B] hover:bg-[#F6F8FB] hover:text-[#111827]'
                 }`}
               >
-                <FileCode2 className="h-3.5 w-3.5 text-blue-400" />
+                <FileCode2 className="h-3.5 w-3.5 text-[#2563EB]" />
                 <span className="font-mono">{tab.title}</span>
                 {tab.isDirty && (
                   <span
@@ -117,7 +112,7 @@ export function StudioEditorToolbar({
                     closePolicyTab(tab.policyId)
                   }}
                   aria-label={`Close ${tab.title}`}
-                  className="rounded p-0.5 text-[#64748B] hover:bg-[#2D3148] hover:text-white"
+                  className="rounded p-0.5 text-[#64748B] hover:bg-[#F6F8FB] hover:text-[#111827]"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -136,8 +131,8 @@ export function StudioEditorToolbar({
             title="Toggle Minimap"
             className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium ${
               settings.minimapEnabled
-                ? 'bg-blue-600/20 text-blue-400'
-                : 'text-[#94A3B8] hover:bg-[#222536] hover:text-white'
+                ? 'bg-[#2563EB]/10 text-[#2563EB]'
+                : 'text-[#64748B] hover:bg-[#F6F8FB] hover:text-[#111827]'
             }`}
           >
             <Map className="h-3.5 w-3.5" />
@@ -154,8 +149,8 @@ export function StudioEditorToolbar({
             title="Toggle Word Wrap"
             className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium ${
               settings.wordWrap === 'on'
-                ? 'bg-blue-600/20 text-blue-400'
-                : 'text-[#94A3B8] hover:bg-[#222536] hover:text-white'
+                ? 'bg-[#2563EB]/10 text-[#2563EB]'
+                : 'text-[#64748B] hover:bg-[#F6F8FB] hover:text-[#111827]'
             }`}
           >
             <WrapText className="h-3.5 w-3.5" />
@@ -168,21 +163,21 @@ export function StudioEditorToolbar({
       <nav
         aria-label="Breadcrumb"
         data-testid="studio-breadcrumbs"
-        className="flex items-center justify-between border-b border-[#2D3148]/50 bg-[#0F121C] px-3 py-1 text-[11px] text-[#94A3B8]"
+        className="flex items-center justify-between border-b border-[#D8DEE9] bg-[#F6F8FB] px-3 py-1 text-[11px] text-[#64748B]"
       >
         <div className="flex items-center gap-1.5">
           <span>{activeWorkspace.name}</span>
           <ChevronRight className="h-3 w-3 text-[#475569]" />
           <span className="flex items-center gap-1">
-            <Folder className="h-3 w-3 text-blue-400" />
+            <Folder className="h-3 w-3 text-[#2563EB]" />
             {folderName}
           </span>
           <ChevronRight className="h-3 w-3 text-[#475569]" />
-          <span className="font-mono font-semibold text-[#F1F5F9]">
+          <span className="font-mono font-semibold text-[#111827]">
             {activeTab?.title ?? 'No Active File'}
           </span>
           <ChevronRight className="h-3 w-3 text-[#475569]" />
-          <span className="rounded bg-blue-500/15 px-1.5 py-0.2 font-mono text-[10px] text-blue-400">
+          <span className="rounded bg-[#2563EB]/10 px-1.5 py-0.2 font-mono text-[10px] text-[#2563EB]">
             v{policyVersion}.0
           </span>
         </div>
@@ -191,17 +186,17 @@ export function StudioEditorToolbar({
           {onGoToLine && (
             <button
               onClick={onGoToLine}
-              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-[#94A3B8] hover:bg-[#222536] hover:text-white"
+              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-[#64748B] hover:bg-white hover:text-[#111827]"
               title="Go To Line (Ctrl+G)"
             >
-              <Hash className="h-3 w-3 text-cyan-400" />
+              <Hash className="h-3 w-3 text-[#0F766E]" />
               Go to Line
             </button>
           )}
           {onFindReplace && (
             <button
               onClick={onFindReplace}
-              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-[#94A3B8] hover:bg-[#222536] hover:text-white"
+              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-[#64748B] hover:bg-white hover:text-[#111827]"
               title="Find & Replace (Ctrl+H)"
             >
               <SearchCode className="h-3 w-3 text-purple-400" />
@@ -219,7 +214,7 @@ export function StudioEditorToolbar({
             data-testid="studio-save-btn"
             aria-label="Save Policy"
             title="Save Policy (Ctrl+S)"
-            className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-2.5 py-1 font-semibold text-white hover:bg-blue-500"
+            className="inline-flex items-center gap-1.5 rounded-md bg-[#2563EB] px-2.5 py-1 font-semibold text-white hover:bg-[#1D4ED8]"
           >
             <Save className="h-3.5 w-3.5" />
             <span>Save</span>
@@ -230,7 +225,7 @@ export function StudioEditorToolbar({
             data-testid="studio-compile-btn"
             aria-label="Compile Policy"
             title="Compile Policy (Ctrl+Shift+B)"
-            className="inline-flex items-center gap-1.5 rounded-md border border-blue-500/40 bg-blue-500/15 px-2.5 py-1 font-semibold text-blue-300 hover:bg-blue-500/25"
+            className="inline-flex items-center gap-1.5 rounded-md border border-[#2563EB] bg-white px-2.5 py-1 font-semibold text-[#2563EB] hover:bg-[#2563EB]/10"
           >
             <Cpu className="h-3.5 w-3.5" />
             <span>Compile</span>
@@ -241,19 +236,19 @@ export function StudioEditorToolbar({
             data-testid="studio-execute-btn"
             aria-label="Execute Policy"
             title="Execute Policy (F5)"
-            className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/40 bg-emerald-500/15 px-2.5 py-1 font-semibold text-emerald-300 hover:bg-emerald-500/25"
+            className="inline-flex items-center gap-1.5 rounded-md border border-[#059669] bg-white px-2.5 py-1 font-semibold text-[#059669] hover:bg-[#059669]/10"
           >
             <Play className="h-3.5 w-3.5" />
             <span>Execute</span>
           </button>
 
-          <div className="mx-1 h-4 w-px bg-[#2D3148]" />
+          <div className="mx-1 h-4 w-px bg-[#D8DEE9]" />
 
           <button
             onClick={onUndo}
             aria-label="Undo"
             title="Undo (Ctrl+Z)"
-            className="rounded-md border border-[#2D3148] bg-[#0F1117] p-1 text-[#94A3B8] hover:text-white"
+            className="rounded-md border border-[#D8DEE9] bg-white p-1 text-[#64748B] hover:text-[#111827]"
           >
             <Undo2 className="h-3.5 w-3.5" />
           </button>
@@ -261,7 +256,7 @@ export function StudioEditorToolbar({
             onClick={onRedo}
             aria-label="Redo"
             title="Redo (Ctrl+Y)"
-            className="rounded-md border border-[#2D3148] bg-[#0F1117] p-1 text-[#94A3B8] hover:text-white"
+            className="rounded-md border border-[#D8DEE9] bg-white p-1 text-[#64748B] hover:text-[#111827]"
           >
             <Redo2 className="h-3.5 w-3.5" />
           </button>
@@ -271,7 +266,7 @@ export function StudioEditorToolbar({
             data-testid="studio-format-btn"
             aria-label="Format Policy"
             title="Format Policy Code"
-            className="inline-flex items-center gap-1.5 rounded-md border border-[#2D3148] bg-[#0F1117] px-2.5 py-1 text-[#CBD5E1] hover:bg-[#222536]"
+            className="inline-flex items-center gap-1.5 rounded-md border border-[#D8DEE9] bg-white px-2.5 py-1 text-[#111827] hover:bg-[#F6F8FB]"
           >
             <Wand2 className="h-3.5 w-3.5 text-purple-400" />
             <span>Format</span>

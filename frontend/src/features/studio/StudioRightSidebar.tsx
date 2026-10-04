@@ -26,29 +26,23 @@ export function StudioRightSidebar({
   policy,
   lastExecution,
 }: StudioRightSidebarProps) {
-  const { activeRightTab, setActiveRightTab, settings } = useStudioStore()
+  const { activeRightTab, setActiveRightTab } = useStudioStore()
   const { categories, folders, updatePolicy } = usePolicyWorkspaceStore()
-
-  const isLight = settings.theme === 'light'
 
   return (
     <aside
       data-testid="studio-right-sidebar"
-      className={`flex h-full flex-col border-l text-xs select-none ${
-        isLight
-          ? 'border-slate-200 bg-slate-50 text-slate-800'
-          : 'border-[#2D3148] bg-[#141722] text-[#CBD5E1]'
-      }`}
+      className="flex h-full flex-col border-l border-[#D8DEE9] bg-white text-xs text-[#111827] select-none"
     >
       {/* Tab Switcher */}
-      <div className="grid grid-cols-2 border-b border-[#2D3148] bg-[#0F1117]/60 p-1">
+      <div className="grid grid-cols-2 border-b border-[#D8DEE9] bg-[#F6F8FB] p-1">
         <button
           onClick={() => setActiveRightTab('properties')}
           data-testid="right-tab-properties"
           className={`flex items-center justify-center gap-1.5 rounded py-1.5 font-medium transition-colors ${
             activeRightTab === 'properties'
-              ? 'bg-blue-600/20 text-blue-400'
-              : 'text-[#64748B] hover:text-white'
+              ? 'bg-white text-[#2563EB]'
+              : 'text-[#64748B] hover:text-[#111827]'
           }`}
         >
           <Sliders className="h-3.5 w-3.5" />
@@ -60,8 +54,8 @@ export function StudioRightSidebar({
           data-testid="right-tab-results"
           className={`flex items-center justify-center gap-1.5 rounded py-1.5 font-medium transition-colors ${
             activeRightTab === 'results'
-              ? 'bg-emerald-600/20 text-emerald-400'
-              : 'text-[#64748B] hover:text-white'
+              ? 'bg-white text-[#059669]'
+              : 'text-[#64748B] hover:text-[#111827]'
           }`}
         >
           <Play className="h-3.5 w-3.5" />
@@ -78,7 +72,7 @@ export function StudioRightSidebar({
         ) : activeRightTab === 'properties' ? (
           <div className="space-y-4">
             <div>
-              <label className="mb-1 block text-[11px] font-semibold text-[#94A3B8]">
+              <label className="mb-1 block text-[11px] font-semibold text-[#64748B]">
                 Policy Name
               </label>
               <input
@@ -87,12 +81,12 @@ export function StudioRightSidebar({
                 onChange={(e) =>
                   updatePolicy(policy.id, { name: e.target.value })
                 }
-                className="w-full rounded-lg border border-[#2D3148] bg-[#0F1117] px-2.5 py-1.5 font-mono text-xs text-white focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-[#D8DEE9] bg-[#FBFCFE] px-2.5 py-1.5 font-mono text-xs text-[#111827] focus:border-[#2563EB] focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-[11px] font-semibold text-[#94A3B8]">
+              <label className="mb-1 block text-[11px] font-semibold text-[#64748B]">
                 Description
               </label>
               <textarea
@@ -101,12 +95,12 @@ export function StudioRightSidebar({
                 onChange={(e) =>
                   updatePolicy(policy.id, { description: e.target.value })
                 }
-                className="w-full rounded-lg border border-[#2D3148] bg-[#0F1117] px-2.5 py-1.5 text-xs text-white focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-[#D8DEE9] bg-[#FBFCFE] px-2.5 py-1.5 text-xs text-[#111827] focus:border-[#2563EB] focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-[11px] font-semibold text-[#94A3B8]">
+              <label className="mb-1 block text-[11px] font-semibold text-[#64748B]">
                 Category
               </label>
               <select
@@ -114,7 +108,7 @@ export function StudioRightSidebar({
                 onChange={(e) =>
                   updatePolicy(policy.id, { categoryId: e.target.value })
                 }
-                className="w-full rounded-lg border border-[#2D3148] bg-[#0F1117] px-2.5 py-1.5 text-xs text-white focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-[#D8DEE9] bg-[#FBFCFE] px-2.5 py-1.5 text-xs text-[#111827] focus:border-[#2563EB] focus:outline-none"
               >
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -125,8 +119,8 @@ export function StudioRightSidebar({
             </div>
 
             <div>
-              <label className="mb-1 flex items-center gap-1 text-[11px] font-semibold text-[#94A3B8]">
-                <Folder className="h-3 w-3 text-blue-400" /> Folder
+              <label className="mb-1 flex items-center gap-1 text-[11px] font-semibold text-[#64748B]">
+                <Folder className="h-3 w-3 text-[#2563EB]" /> Folder
               </label>
               <select
                 value={policy.folderId ?? ''}
@@ -135,7 +129,7 @@ export function StudioRightSidebar({
                     folderId: e.target.value || null,
                   })
                 }
-                className="w-full rounded-lg border border-[#2D3148] bg-[#0F1117] px-2.5 py-1.5 text-xs text-white focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-[#D8DEE9] bg-[#FBFCFE] px-2.5 py-1.5 text-xs text-[#111827] focus:border-[#2563EB] focus:outline-none"
               >
                 <option value="">Project Root</option>
                 {folders.map((f) => (
@@ -151,21 +145,21 @@ export function StudioRightSidebar({
           <div data-testid="execution-results-panel" className="space-y-3.5">
             {lastExecution ? (
               <>
-                <div className="rounded-xl border border-[#2D3148] bg-[#0F1117] p-3.5">
+                <div className="rounded-xl border border-[#D8DEE9] bg-[#FBFCFE] p-3.5">
                   <div className="text-[10px] uppercase tracking-wider text-[#64748B]">
                     Policy Name
                   </div>
-                  <div className="mt-0.5 font-mono text-sm font-bold text-white">
+                  <div className="mt-0.5 font-mono text-sm font-bold text-[#111827]">
                     {lastExecution.policyName}
                   </div>
 
-                  <div className="mt-3 flex items-center justify-between border-t border-[#2D3148] pt-3">
-                    <span className="text-[#94A3B8]">Decision</span>
+                  <div className="mt-3 flex items-center justify-between border-t border-[#D8DEE9] pt-3">
+                    <span className="text-[#64748B]">Decision</span>
                     <span
                       className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-mono text-xs font-bold ${
                         lastExecution.decision === 'APPROVE'
-                          ? 'bg-emerald-500/20 text-emerald-400'
-                          : 'bg-red-500/20 text-red-400'
+                          ? 'bg-[#059669]/10 text-[#059669]'
+                          : 'bg-[#DC2626]/10 text-[#DC2626]'
                       }`}
                     >
                       {lastExecution.decision === 'APPROVE' ? (
@@ -178,22 +172,22 @@ export function StudioRightSidebar({
                   </div>
 
                   <div className="mt-2 flex items-center justify-between">
-                    <span className="text-[#94A3B8]">Execution Time</span>
-                    <span className="font-mono font-semibold text-white">
+                    <span className="text-[#64748B]">Execution Time</span>
+                    <span className="font-mono font-semibold text-[#111827]">
                       {lastExecution.executionTimeMs} ms
                     </span>
                   </div>
 
                   <div className="mt-2 flex items-center justify-between">
-                    <span className="text-[#94A3B8]">Status</span>
-                    <span className="font-mono font-semibold text-emerald-400">
+                    <span className="text-[#64748B]">Status</span>
+                    <span className="font-mono font-semibold text-[#059669]">
                       {lastExecution.status}
                     </span>
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-[#2D3148] bg-[#0F1117] p-3.5">
-                  <div className="mb-2 text-[11px] font-semibold text-[#94A3B8]">
+                <div className="rounded-xl border border-[#D8DEE9] bg-[#FBFCFE] p-3.5">
+                  <div className="mb-2 text-[11px] font-semibold text-[#64748B]">
                     Output Values
                   </div>
                   {Object.keys(lastExecution.outputs).length === 0 ? (
@@ -205,10 +199,10 @@ export function StudioRightSidebar({
                       {Object.entries(lastExecution.outputs).map(([k, v]) => (
                         <div
                           key={k}
-                          className="flex items-center justify-between rounded bg-[#1A1D27] px-2.5 py-1.5"
+                          className="flex items-center justify-between rounded bg-white px-2.5 py-1.5"
                         >
-                          <span className="text-blue-400">{k}</span>
-                          <span className="font-bold text-amber-300">
+                          <span className="text-[#2563EB]">{k}</span>
+                          <span className="font-bold text-[#D97706]">
                             {String(v)}
                           </span>
                         </div>
@@ -218,7 +212,7 @@ export function StudioRightSidebar({
                 </div>
               </>
             ) : (
-              <div className="rounded-xl border border-[#2D3148] bg-[#0F1117]/60 p-6 text-center text-[#64748B]">
+              <div className="rounded-xl border border-[#D8DEE9] bg-[#FBFCFE] p-6 text-center text-[#64748B]">
                 Run the current policy to view its decision, outputs, time, and status.
               </div>
             )}
